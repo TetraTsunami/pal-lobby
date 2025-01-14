@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0.5rem;
+      overflow: hidden;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    #config {
+      border-radius: 10px;
+      border: 1px solid grey;
+      padding: 10px;
+      display: grid;
+      grid-template-columns: max-content auto max-content auto;
+      gap: 10px;
+      width: max-content;
+      margin: 0 auto;
+    }
+    #text {
+      border-radius: 10px;
+      border: 1px solid grey;
+      padding: 20px;
+      width: max-content;
+      margin: 10px auto;
+    }
+    h1 {
+      margin-top: 0;
+    }
+    @media (max-width: 400px) {
+      #config {
+        grid-template-columns: max-content;
+      }
+    }
+    canvas {
+      box-shadow: 1px 1px 10px 1px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+  <head>
+    <title>Pals</title>
+    <!-- gl-matrix library import -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix.js" integrity="sha512-zhHQR0/H5SEBL3Wn6yYSaTTZej12z0hVZKOv3TwCUXT1z5qeqGcXJLLrbERYRScEDDpYIJhPC1fk31gqR783iQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script type="module" src="main.js"></script>
+  </head>
+  <body>
+    <canvas id="canvas" 
+    width="600" height="600">
+  </canvas>
+  </body>
+</html>
