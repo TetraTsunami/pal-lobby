@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+  <head>
   <style>
     html, body {
       margin: 0;
@@ -35,16 +36,48 @@
     canvas {
       box-shadow: 1px 1px 10px 1px rgba(0, 0, 0, 0.2);
     }
+    ul.status {
+      list-style: none;
+      padding: 0;
+    }
+    ul.status > li {
+      display: flex;
+      align-items: center;
+      margin: 0;
+    }
+    .status-unknown, .status-ok, .status-error {
+      width: 0.5em;
+      height: 0.5em;
+      margin-right: 0.5em;
+      border-radius: 100%;
+    }
+    .status-unknown {
+      background: grey;
+    }
+    .status-ok {
+      background: #4bbd4b;
+    }
+    .status-error {
+      background: #c53f46;
+    }
   </style>
-  <head>
     <title>Pals</title>
     <!-- gl-matrix library import -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gl-matrix/2.8.1/gl-matrix.js" integrity="sha512-zhHQR0/H5SEBL3Wn6yYSaTTZej12z0hVZKOv3TwCUXT1z5qeqGcXJLLrbERYRScEDDpYIJhPC1fk31gqR783iQ==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script type="module" src="main.js"></script>
+    <script>
+      document.write('<script src="http://' + (location.host || 'localhost').split(':')[0] +
+      ':35729/livereload.js?snipver=1"></' + 'script>')
+    </script>
   </head>
   <body>
     <canvas id="canvas" 
     width="600" height="600">
-  </canvas>
+    </canvas>
+    <ul class="status">
+      <li><span id="backend" class="status-error"></span>Backend</li>
+      <li><span id="discord" class="status-unknown"></span>Discord</li>
+      <li><span id="steam" class="status-unknown"></span>Steam</li>
+    </ul>
   </body>
 </html>

@@ -2,6 +2,7 @@ const width = 600;
 const height = 600;
 const radius = 20;
 const maxGroupRadius = 70;
+const backendUrl = 'http://localhost:3000';
 
 let mousePos = { x: 0, y: 0 };
 let circles = Array(30).fill().map(() => ({
@@ -86,8 +87,8 @@ function repelPoints(list, radius = 0) {
     c.x += c.dx;
     c.y += c.dy;
     // clamp dx and dy
-    c.dx = Math.min(Math.max(c.dx, -5), 5);
-    c.dy = Math.min(Math.max(c.dy, -5), 5);
+    c.dx = Math.min(Math.max(c.dx, -3), 3);
+    c.dy = Math.min(Math.max(c.dy, -3), 3);
     c.dx *= 0.98;
     c.dy *= 0.98;
   }
@@ -99,7 +100,6 @@ function repelPoints(list, radius = 0) {
  * @param {*} circles 
  */
 function updatePositions(circles) {
-  console.log(groups);  // Update circles
   repelPoints(circles, radius);
   repelPoints(groups);
   // Repel circles from groups they don't belong to
@@ -179,3 +179,18 @@ addEventListener('click', (event) => {
     removeGroup();
   }
 });
+
+function updateStatus() {
+  fetch(`${backendUrl}/api/status`)
+    .then(res => res.json())
+    .then(data => {
+      for (const [key, value] of Object.entries(data)) {
+        document.getElementById(key).classList.remove("status-unknown", "status-ok", "status-error");
+        document.getElementById(key).classList.add(`status-${value ? 'ok' : 'error'}`);
+      }
+    }).catch((e) => {
+      console.error(e);
+      document.getElementById('status').innerText = 'Error fetching status';
+    });
+}
+updateStatus();

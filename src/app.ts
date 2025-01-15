@@ -27,25 +27,23 @@ interface monitorSession extends wsSession {
 
 const sessions = new Map<string, steamLoginSession | monitorSession>();
 const loggingMiddleware = (req: Request, _: any, next: NextFunction) => {
-  const time = new Date(Date.now()).toISOString();
+  const time = new Date(Date.now()).toLocaleString();
   console.log(`[${time}] ${req.method} ${req.hostname} ${req.path}`);
   next();
 }
-app.get("/api/status", loggingMiddleware, function (_, res) {
+app.use(loggingMiddleware);
+app.use(express.static('public'))
+app.get("/api/status", function (_, res) {
   const status = {
     backend: true,
     // discord: discordLoggedIn,
     discord: false,
     steam: steamLoggedIn,
   }
-  if (!status.discord || !status.steam) {
-    res.status(500).json(status);
-    return;
-  }
   res.status(200).json(status);
 });
 
-app.get('/api/steamLogin', loggingMiddleware, async (_, res) => {
+app.get('/api/steamLogin', async (_, res) => {
   const sessionId = uuidv4();
   const steamSession = new LoginSession(EAuthTokenPlatformType.MobileApp);
   steamSession.loginTimeout = 2 * 60 * 1000; // 2 mins
