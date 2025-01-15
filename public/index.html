@@ -5,7 +5,6 @@
     html, body {
       margin: 0;
       padding: 0.5rem;
-      overflow: hidden;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
     #config {
@@ -70,7 +69,6 @@
       ':35729/livereload.js?snipver=1"></' + 'script>')
     </script>
   </head>
-  <body>
     <canvas id="canvas" 
     width="600" height="600">
     </canvas>
@@ -79,5 +77,7 @@
       <li><span id="discord" class="status-unknown"></span>Discord</li>
       <li><span id="steam" class="status-unknown"></span>Steam</li>
     </ul>
+    <button id="steamLogin">Login to Steam</button>
+    <img id="qr" style="display: none;"/>
   </body>
 </html>

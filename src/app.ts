@@ -1,5 +1,5 @@
 import fs from 'fs';
-import { createServer } from 'http';
+import { createServer, IncomingMessage } from 'http';
 
 import express, { NextFunction, Request } from 'express';
 import { EAuthTokenPlatformType, LoginSession } from 'steam-session';
@@ -45,7 +45,7 @@ app.get("/api/status", function (_, res) {
 
 app.get('/api/steamLogin', async (_, res) => {
   const sessionId = uuidv4();
-  const steamSession = new LoginSession(EAuthTokenPlatformType.MobileApp);
+  const steamSession = new LoginSession(EAuthTokenPlatformType.SteamClient);
   steamSession.loginTimeout = 2 * 60 * 1000; // 2 mins
   const startResult = await steamSession.startWithQR();
 
@@ -54,20 +54,40 @@ app.get('/api/steamLogin', async (_, res) => {
   res.json({ qrData: await qrData, sessionId });
 });
 
-wss.on('connection', function (ws, _) {
-  ws.on('message', (message) => {
-    const { sessionId } = JSON.parse(message.toString());
-    const session = sessions.get(sessionId)!;
-    session.socket = ws;
-    switch (session.type) {
-      case "steamLogin":
-        steamLoginWSHandler(session, ws);
-        break;
-      case "monitor":
-        break;
-    }
+wss.on('connection', function (ws, req: IncomingMessage) {
+  // url = /ws/:sessionId
+  if (!req.url?.startsWith('/ws/')) {
+    ws.close();
+    return;
+  }
+  const url = req.url?.split('/');
+  if (url === undefined) {
+    ws.close();
+    return;
+  }
+  const sessionId = url[2];
+  if (!sessions.has(sessionId)) {
+    ws.close();
+    return;
+  }
+  const session = sessions.get(sessionId)!;
+  session.socket = ws;
 
+  ws.on('error', (err) => {
+    console.error(err);
   });
+  ws.on('close', () => {
+    sessions.delete(sessionId);
+  });
+
+  switch (session.type) {
+    case "steamLogin":
+      steamLoginWSHandler(session, ws);
+      break;
+    case "monitor":
+      monitorWSHandler(session, ws);
+      break;
+  }
 });
 
 function steamLoginWSHandler(ss: steamLoginSession, ws: WebSocket) {
@@ -79,8 +99,8 @@ function steamLoginWSHandler(ss: steamLoginSession, ws: WebSocket) {
     wsSend("msg", "Approve login on your phone");
   });
   ls.on('authenticated', async () => {
-    fs.writeFileSync('refreshToken.txt', ls.refreshToken);
     await initializeSteam(ls.refreshToken);
+    fs.writeFileSync('refreshToken.txt', ls.refreshToken);
     wsSend("success", "Authenticated successfully! SteamID = " + ls.steamID);
     ws.close();
     ls.cancelLoginAttempt();
@@ -91,6 +111,16 @@ function steamLoginWSHandler(ss: steamLoginSession, ws: WebSocket) {
   ls.on('error', (err: any) => {
     wsSend("err", err.message);
   });
+}
+
+function monitorWSHandler(ms: monitorSession, ws: WebSocket) {
+  const wsSend = (type: string, msg: string) => {
+    ws.send(JSON.stringify({ type, msg }));
+  }
+  // Monitor friends list.
+  // Initial message is full list (name, pfp, status)
+  // Subsequent messages are updates (name, status)
+  
 }
 
 export default server;

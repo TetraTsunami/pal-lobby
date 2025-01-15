@@ -194,3 +194,22 @@ function updateStatus() {
     });
 }
 updateStatus();
+
+let sessionId = null;
+document.getElementById('steamLogin').addEventListener('click', () => {
+  fetch(`${backendUrl}/api/steamLogin`)
+    .then(res => res.json())
+    .then(({qrData, sessionId}) => {
+      document.getElementById('qr').src = qrData;
+      document.getElementById('qr').style.display = 'block';
+      sessionId = sessionId;
+      // start websocket
+      const ws = new WebSocket(`ws://localhost:3000/ws/${sessionId}`);
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type !== 'msg') {
+          document.getElementById('qr').style.display = 'none';
+        }
+      };
+    })
+});

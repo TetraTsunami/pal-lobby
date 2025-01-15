@@ -1,38 +1,40 @@
 import SteamUser from 'steam-user';
-import type SteamID from 'steamid';
 import fs from 'fs';
 
 const client = new SteamUser();
 
-// client.on('loggedOn', function(details) {
-// 	console.log('Logged into Steam as ' + client.steamID.getSteam3RenderedID());
-// });
-
-// client.on('error', function(e) {
-// 	console.log("Steam logon error", e);
-// });
-
-// client.on('friendsList', function() {
-//   console.log("Friends list", client.myFriends);
-// });
-
 export let loggedIn = false;
 
-const readyClient: Promise<SteamUser> = new Promise((resolve) => {
+export const readyClient: Promise<SteamUser> = new Promise((resolve) => {
   client.on('loggedOn', () => {
-    console.log('Logged into Steam as ' + (client.steamID as SteamID).getSteam3RenderedID());
+    console.log('Logged into Steam as ' + client.steamID?.getSteamID64());
     loggedIn = true;
     resolve(client);
   });
 });
 
-export async function initializeSteam(refreshToken?: string) {
-  if (refreshToken) {
+export async function initializeSteam(refreshToken: string) {
+  if (!loggedIn) {
     client.logOn({ refreshToken });
-  } else if (fs.existsSync('refreshToken.txt')) {
-    client.logOn({
-      refreshToken: fs.readFileSync('refreshToken.txt').toString().trim()
-    });
   }
   return readyClient;
 }
+
+if (fs.existsSync('refreshToken.txt')) {
+  client.logOn({
+    refreshToken: fs.readFileSync('refreshToken.txt').toString().trim()
+  });
+}
+
+client.on('friendsList', function() {
+  const friends = Object.entries(client.myFriends)
+    .filter(([_, relation]) => relation === SteamUser.EFriendRelationship.Friend)
+    .map(([steamID]) => steamID);
+  // client.getPersonas(friends, (err, personas) => {
+  //   if (err) {
+  //     console.error(err);
+  //     return;
+  //   }
+  //   console.log(personas);
+  // });
+});
