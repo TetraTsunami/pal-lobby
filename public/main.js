@@ -195,21 +195,41 @@ function updateStatus() {
 }
 updateStatus();
 
-let sessionId = null;
+let loginSession = null;
 document.getElementById('steamLogin').addEventListener('click', () => {
   fetch(`${backendUrl}/api/steamLogin`)
     .then(res => res.json())
     .then(({qrData, sessionId}) => {
-      document.getElementById('qr').src = qrData;
+      document.getElementById('qrimg').src = qrData;
+      document.getElementById('qrtext').innerText = "Waiting for login...";
       document.getElementById('qr').style.display = 'block';
-      sessionId = sessionId;
-      // start websocket
+      loginSession = sessionId;
       const ws = new WebSocket(`ws://localhost:3000/ws/${sessionId}`);
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        if (data.type !== 'msg') {
-          document.getElementById('qr').style.display = 'none';
+        document.getElementById('qrtext').innerText = data.msg;
+      };
+      ws.onclose = () => {
+        document.getElementById('qr').style.display = 'none';
+      };
+    })
+});
+
+let monitorSession = null;
+addEventListener('load', () => {
+  fetch(`${backendUrl}/api/monitor`)
+    .then(res => res.json())
+    .then(({sessionId}) => {
+      monitorSession = sessionId;
+      const ws = new WebSocket(`ws://localhost:3000/ws/${sessionId}`);
+      let logQueue = [];
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        logQueue.push(data.msg);
+        if (logQueue.length > 10) {
+          logQueue.shift();
         }
+        document.getElementById('monitor').innerText = logQueue.join('\n');
       };
     })
 });
