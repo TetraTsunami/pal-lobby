@@ -148,6 +148,7 @@ function monitorWSHandler(_ms: monitorSession, ws: WebSocket) {
     .then(friends => steamFriendsToPals(friends))
     .then(({ pals, activities }) => {
       activities.forEach(a => activityCache.set(a.id, a));
+      wsSend("activities", JSON.stringify(activities));
       wsSend("pals", JSON.stringify(pals));
     });
   ws.on('message', (msg) => {
@@ -158,7 +159,7 @@ function monitorWSHandler(_ms: monitorSession, ws: WebSocket) {
         wsSend("err", "Activity not found");
         return;
       }
-      wsSend("activity", JSON.stringify(activity));
+      wsSend("activities", JSON.stringify(activity));
     }
   });
 }
@@ -197,7 +198,7 @@ async function steamFriendsToPals(friends: SteamFriendProfile[]): Promise<{ pals
   const pals = friends.map(f => {
     return {
       name: f.personaname,
-      avatarURL: f.avatarmedium,
+      avatarURL: "https://avatars.fastly.steamstatic.com/" + f.avatarhash + "_medium.jpg",
       status: steamStatusToPalStatus(f.personastate),
       activity: f.gameid !== undefined ? `steam:${f.gameid}` : undefined,
     }
