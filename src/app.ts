@@ -212,10 +212,10 @@ async function steamFriendsToPals(friends: SteamFriendProfile[]): Promise<{ pals
   })); // TODO: could use steamgridDB here for pretty heroes without text
   const activities = gameData.flat()
     .map((data: any) => {
-      if (data === null || data.success === false) {
+      const appid = Object.keys(data)[0];
+      if (data === null || data[appid].success === false) {
         return null;
       }
-      const appid = Object.keys(data)[0];
       const appData = data[appid].data;
       return {
         type: "steam" as const,

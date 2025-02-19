@@ -1,5 +1,3 @@
-import { log } from "console";
-
 const width = 600;
 const height = 600;
 const palRadius = 20;
@@ -24,10 +22,13 @@ class PhysicsCircle {
     this.intangible = intangible;
   }
   repel(other) {
+    if (other.intangible) {
+      return;
+    }
     const dx = this.x - other.x;
     const dy = this.y - other.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    const pushMagnitude = Math.pow(distance, -2) * this.radius * 3;
+    const pushMagnitude = Math.pow(distance, -2) * Math.pow(this.radius, 2) * 0.1;
     if (distance) {
       const angle = Math.atan2(dy, dx);
       this.dx += Math.cos(angle) * pushMagnitude;
@@ -36,11 +37,28 @@ class PhysicsCircle {
       other.dy -= Math.sin(angle) * pushMagnitude;
     }
   }
+
+  repelAway(other) {
+    if (other.intangible) {
+      return;
+    }
+    const dx = this.x - other.x;
+    const dy = this.y - other.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const pushMagnitude = Math.pow(distance, -2) * Math.pow(this.radius, 2) * 0.1;
+    if (distance) {
+      const angle = Math.atan2(dy, dx);
+      this.dx += Math.cos(angle) * pushMagnitude * 0.01;
+      this.dy += Math.sin(angle) * pushMagnitude * 0.01;
+      other.dx -= Math.cos(angle) * pushMagnitude;
+      other.dy -= Math.sin(angle) * pushMagnitude;
+    }
+  }
   repelFromWalls(width, height) {
     const xDistance = Math.pow((width / 2 - this.x) / width, 7);
     const yDistance = Math.pow((height / 2 - this.y) / height, 7);
-    this.dx += xDistance * palRadius;
-    this.dy += yDistance * palRadius;
+    this.dx += xDistance * this.radius;
+    this.dy += yDistance * this.radius;;
   }
   updatePosition() {
     this.x += this.dx;
@@ -57,11 +75,13 @@ class Pal {
   name;
   avatarURL;
   curStatus;
+  activity;
   physics;
   img;
-  constructor(name, avatarURL, status) {
+  constructor(name, avatarURL, status, activity) {
     this.name = name;
     this.avatarURL = avatarURL;
+    this.activity = activity;
     this.physics = new PhysicsCircle(
       Math.random() * (width - 2 * palRadius) + palRadius,
       Math.random() * (height - 2 * palRadius) + palRadius,
@@ -118,13 +138,32 @@ class Pal {
 }
 
 class Group {
-  indices;
+  members;
   age;
-  color;
-  constructor(indices, age, color) {
-    this.indices = indices;
+  activityID;
+  backgroundURL;
+  img;
+  physics = new PhysicsCircle(
+    Math.random() * (width - 2 * maxGroupRadius) + maxGroupRadius,
+    Math.random() * (height - 2 * maxGroupRadius) + maxGroupRadius,
+    0,
+    0,
+    1,
+    false
+  );
+  constructor(members, age, activityID, backgroundURL) {
+    this.members = members;
     this.age = age;
-    this.color = color;
+    this.activityID = activityID;
+    this.backgroundURL = backgroundURL;
+    if (backgroundURL) {
+      const img = new Image();
+      img.src = backgroundURL;
+      img.onload = () => {
+        this.img = img;
+      };
+    }
+
   }
 
   get radius() {
@@ -132,10 +171,26 @@ class Group {
   }
 
   draw(context) {
-    context.fillStyle = this.color;
-    context.beginPath();
-    context.arc(this.physics.x, this.physics.y, this.radius, 0, Math.PI * 2);
-    context.fill();
+    this.physics.radius = this.radius;
+    if (this.img && this.img.complete) {
+      context.save();
+      context.beginPath();
+      context.arc(this.physics.x, this.physics.y, this.radius, 0, Math.PI * 2);
+      context.clip();
+      context.drawImage(
+        this.img,
+        this.physics.x - this.radius,
+        this.physics.y - this.radius,
+        this.radius * 2,
+        this.radius * 2
+      );
+      context.restore();
+    } else {
+      context.fillStyle = "gray";
+      context.beginPath();
+      context.arc(this.physics.x, this.physics.y, this.radius, 0, Math.PI * 2);
+      context.fill();
+    }
   }
 }
 
@@ -198,41 +253,27 @@ function repelPoints(list) {
  * Also pushes away from walls if too close.
  * @param {*} circles
  */
-function updatePositions(circles) {
-  repelPoints(circles, palRadius);
-  repelPoints(groups);
-  // Repel circles from groups they don't belong to
-  circles.forEach((circle, i) => {
-    groups.forEach((g) => {
-      g.age += 0.1;
+function updatePositions(circles, groups) {
+  repelPoints(circles.map((c) => c.physics));
+  repelPoints(groups.map((g) => g.physics));
+  groups.forEach((g) => {
+    g.age += 1;
+    circles.forEach(circle => {
       const rad = g.radius;
-      if (!g.indices.includes(i)) {
-        if (circle.intangible) {
-          return;
-        }
-        const dx = circle.x - g.x;
-        const dy = circle.y - g.y;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-        const pushMagnitude = Math.pow(rad * 2 - distance, 3) / 10000;
-        if (distance < rad * 2) {
-          const angle = Math.atan2(dy, dx);
-          g.dx -= Math.cos(angle) * pushMagnitude * 0.01;
-          g.dy -= Math.sin(angle) * pushMagnitude * 0.01;
-          circle.dx += Math.cos(angle) * pushMagnitude;
-          circle.dy += Math.sin(angle) * pushMagnitude;
-        }
-      } else {
-        // Attract circles to equally spaced angles on group's perimeter
-        const indexInGroup = g.indices.indexOf(i);
-        const angleStep = (2 * Math.PI) / g.indices.length;
+      if (!g.members.includes(circle)) {
+        g.physics.repelAway(circle.physics);
+    } else {
+        // Attract members to equally spaced angles on group's perimeter
+        const indexInGroup = g.members.indexOf(circle);
+        const angleStep = (2 * Math.PI) / g.members.length;
         const angle = angleStep * indexInGroup;
-        const targetX = g.x + rad * Math.cos(angle);
-        const targetY = g.y + rad * Math.sin(angle);
-        const dx = targetX - circle.x;
-        const dy = targetY - circle.y;
-        circle.intangible = true;
-        circle.dx = dx * 0.05;
-        circle.dy = dy * 0.05;
+        const targetX = g.physics.x + rad * Math.cos(angle);
+        const targetY = g.physics.y + rad * Math.sin(angle);
+        const dx = targetX - circle.physics.x;
+        const dy = targetY - circle.physics.y;
+        circle.physics.intangible = true;
+        circle.physics.dx = dx * 0.05;
+        circle.physics.dy = dy * 0.05;
       }
     });
   });
@@ -244,7 +285,7 @@ function update() {
   /** @type {CanvasRenderingContext2D} */
   const context = canvas.getContext("2d");
   context.clearRect(0, 0, canvas.width, canvas.height);
-  updatePositions(pals.map((p) => p.physics));
+  updatePositions(pals, groups);
   groups.forEach((group) => {
     group.draw(context);
   });
@@ -258,9 +299,26 @@ function draw() {
   requestAnimationFrame(draw);
 }
 
+function updateGroups() {
+  // See if any pals are doing an activity that we know about and don't have a group for
+  const palsWithActivities = pals.filter((p) => p.activity && !groups.some((g) => g.members.includes(p)));
+  for (const pal of palsWithActivities) {
+    const activity = knownActivities.get(pal.activity);
+    if (!activity) {
+      continue;
+    }
+    const group = new Group([pal], 1, pal.activity, activity.backgroundURL);
+    groups.push(group);
+  }
+}
+
+setInterval(updateGroups, 5000);
+
 addEventListener("load", () => {
+  updateGroups();
   draw();
 });
+
 
 addEventListener("mousemove", (event) => {
   mousePos = { x: event.clientX, y: event.clientY };
@@ -325,7 +383,7 @@ addEventListener("load", () => {
             if (currentPal) {
               currentPal.physics = pal.physics;
             } else {
-              currentPal = pals.push(new Pal(pal.name, pal.avatarURL, pal.status));
+              currentPal = pals.push(new Pal(pal.name, pal.avatarURL, pal.status, pal.activity));
             }
             if (currentPal.activity && !knownActivities.has(pal.activity)) {
               ws.send(JSON.stringify({ type: "activity", id: pal.activity }));
