@@ -1,7 +1,6 @@
 const width = 600;
 const height = 600;
 const palRadius = 20;
-const maxGroupRadius = 70;
 const backendUrl = "http://localhost:3000";
 
 let mousePos = { x: 0, y: 0 };
@@ -21,44 +20,39 @@ class PhysicsCircle {
     this.radius = radius;
     this.intangible = intangible;
   }
-  repel(other) {
+  repel(other, magnitude = 1) {
     if (other.intangible) {
       return;
     }
     const dx = this.x - other.x;
     const dy = this.y - other.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    const pushMagnitude = Math.pow(distance, -2) * Math.pow(this.radius, 2) * 0.1;
+    const sizeDiff = Math.pow(this.radius / other.radius || 1, 2);
+    const invSizeDiff = 1 / sizeDiff;
+    const pushMagnitude = Math.pow(distance, -2) * Math.pow(this.radius, 0.5) * magnitude;
     if (distance) {
       const angle = Math.atan2(dy, dx);
-      this.dx += Math.cos(angle) * pushMagnitude;
-      this.dy += Math.sin(angle) * pushMagnitude;
-      other.dx -= Math.cos(angle) * pushMagnitude;
-      other.dy -= Math.sin(angle) * pushMagnitude;
+      this.dx += Math.cos(angle) * pushMagnitude * invSizeDiff;
+      this.dy += Math.sin(angle) * pushMagnitude * invSizeDiff;
+      other.dx -= Math.cos(angle) * pushMagnitude * sizeDiff;
+      other.dy -= Math.sin(angle) * pushMagnitude * sizeDiff;
     }
   }
 
-  repelAway(other) {
-    if (other.intangible) {
-      return;
-    }
-    const dx = this.x - other.x;
-    const dy = this.y - other.y;
-    const distance = Math.sqrt(dx * dx + dy * dy);
-    const pushMagnitude = Math.pow(distance, -2) * Math.pow(this.radius, 2) * 0.1;
-    if (distance) {
-      const angle = Math.atan2(dy, dx);
-      this.dx += Math.cos(angle) * pushMagnitude * 0.01;
-      this.dy += Math.sin(angle) * pushMagnitude * 0.01;
-      other.dx -= Math.cos(angle) * pushMagnitude;
-      other.dy -= Math.sin(angle) * pushMagnitude;
-    }
-  }
   repelFromWalls(width, height) {
-    const xDistance = Math.pow((width / 2 - this.x) / width, 7);
-    const yDistance = Math.pow((height / 2 - this.y) / height, 7);
+    const xDistance = Math.pow((width / 2 - this.x) / width, 9) * 0.25;
+    const yDistance = Math.pow((height / 2 - this.y) / height, 9) * 0.25;
     this.dx += xDistance * this.radius;
     this.dy += yDistance * this.radius;;
+  }
+  repelFromCenter() {
+    const dx = this.x - width / 2;
+    const dy = this.y - height / 2;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx);
+    const pushMagnitude = Math.pow(distance, -2) * Math.pow(this.radius, 0.5);
+    this.dx += Math.cos(angle) * pushMagnitude;
+    this.dy += Math.sin(angle) * pushMagnitude;
   }
   updatePosition() {
     this.x += this.dx;
@@ -139,21 +133,20 @@ class Pal {
 
 class Group {
   members;
-  age;
+  age = 1;
   activityID;
   backgroundURL;
   img;
   physics = new PhysicsCircle(
-    Math.random() * (width - 2 * maxGroupRadius) + maxGroupRadius,
-    Math.random() * (height - 2 * maxGroupRadius) + maxGroupRadius,
+    Math.random() * (width - 2 * 70) + 70,
+    Math.random() * (height - 2 * 70) + 70,
     0,
     0,
     1,
     false
   );
-  constructor(members, age, activityID, backgroundURL) {
+  constructor(members, activityID, backgroundURL) {
     this.members = members;
-    this.age = age;
     this.activityID = activityID;
     this.backgroundURL = backgroundURL;
     if (backgroundURL) {
@@ -167,12 +160,16 @@ class Group {
   }
 
   get radius() {
-    return Math.min(this.age, maxGroupRadius);
+    return Math.min(70, this.age, 400 / groups.length);
   }
 
+  /**
+   * @param {CanvasRenderingContext2D} context 
+   */
   draw(context) {
     this.physics.radius = this.radius;
     if (this.img && this.img.complete) {
+      const imageAspect = this.img.width / this.img.height;
       context.save();
       context.beginPath();
       context.arc(this.physics.x, this.physics.y, this.radius, 0, Math.PI * 2);
@@ -181,7 +178,7 @@ class Group {
         this.img,
         this.physics.x - this.radius,
         this.physics.y - this.radius,
-        this.radius * 2,
+        this.radius * 2 * imageAspect,
         this.radius * 2
       );
       context.restore();
@@ -198,34 +195,7 @@ let pals = [];
 let groups = [];
 let knownActivities = new Map();
 
-// function addGroup() {
-//   const indicesNotInGroup = circles.map((_, i) => i).filter(i => !groups.some(g => g.indices.includes(i)));
-//   if (indicesNotInGroup.length < 6) {return;}
-//   const numToChoose = Math.round(Math.random() * 4 + 2);
-//   const chosenIndices = [];
-//   for (let i = 0; i < numToChoose; i++) {
-//     const index = Math.floor(Math.random() * indicesNotInGroup.length);
-//     chosenIndices.push(indicesNotInGroup.splice(index, 1)[0]);
-//   }
-//   groups.push({
-//     indices: chosenIndices,
-//     age: 1,
-//     color: `rgb(${Math.random() * 255},${Math.random() * 255},${Math.random() * 255})`,
-//     x: Math.random() * (width - 2 * maxGroupRadius) + maxGroupRadius,
-//     y: Math.random() * (height - 2 * maxGroupRadius) + maxGroupRadius,
-//     dx: 0,
-//     dy: 0
-//   });
-// }
-
-// function removeGroup() {
-//   const popped = groups.pop();
-//   for (const i of popped.indices) {
-//     circles[i].intangible = false;
-//   }
-// }
-
-function repelPoints(list) {
+function repelPoints(list, magnitude = 1) {
   for (let i = 0; i < list.length; i++) {
     const c = list[i];
     for (let j = i + 1; j < list.length + 1; j++) {
@@ -241,7 +211,7 @@ function repelPoints(list) {
       if (other.intangible) {
         continue;
       }
-      c.repel(other);
+      c.repel(other, magnitude);
     }
     c.repelFromWalls(width, height);
     c.updatePosition();
@@ -257,11 +227,11 @@ function updatePositions(circles, groups) {
   repelPoints(circles.map((c) => c.physics));
   repelPoints(groups.map((g) => g.physics));
   groups.forEach((g) => {
-    g.age += 1;
+    g.age += 3;
     circles.forEach(circle => {
       const rad = g.radius;
       if (!g.members.includes(circle)) {
-        g.physics.repelAway(circle.physics);
+        g.physics.repel(circle.physics, 0.1);
     } else {
         // Attract members to equally spaced angles on group's perimeter
         const indexInGroup = g.members.indexOf(circle);
@@ -307,15 +277,27 @@ function updateGroups() {
     if (!activity) {
       continue;
     }
-    const group = new Group([pal], 1, pal.activity, activity.backgroundURL);
+    const groupIndex = groups.findIndex((g) => g.activityID === pal.activity);
+    if (groupIndex !== -1) {
+      groups[groupIndex].members.push(pal);
+      continue;
+    }
+    const group = new Group([pal], pal.activity, activity.backgroundURL);
     groups.push(group);
+  }
+  for (const group of groups) {
+    for (const member of group.members) {
+      if (member.activity !== group.activityID) {
+        group.members.splice(group.members.indexOf(member), 1);
+      }
+    }
+    if (!group.members.length) {
+      groups.splice(groups.indexOf(group), 1);
+    }
   }
 }
 
-setInterval(updateGroups, 5000);
-
 addEventListener("load", () => {
-  updateGroups();
   draw();
 });
 
@@ -344,7 +326,7 @@ function updateStatus() {
 }
 updateStatus();
 
-let loginSession = null;
+let _loginSession = null;
 document.getElementById("steamLogin").addEventListener("click", () => {
   fetch(`${backendUrl}/api/steamLogin`)
     .then((res) => res.json())
@@ -352,7 +334,7 @@ document.getElementById("steamLogin").addEventListener("click", () => {
       document.getElementById("qrimg").src = qrData;
       document.getElementById("qrtext").innerText = "Waiting for login...";
       document.getElementById("qr").style.display = "block";
-      loginSession = sessionId;
+      _loginSession = sessionId;
       const ws = new WebSocket(`ws://localhost:3000/ws/${sessionId}`);
       ws.onmessage = (event) => {
         const data = JSON.parse(event.data);
@@ -364,12 +346,12 @@ document.getElementById("steamLogin").addEventListener("click", () => {
     });
 });
 
-let monitorSession = null;
+let _monitorSession = null;
 addEventListener("load", () => {
   fetch(`${backendUrl}/api/monitor`)
     .then((res) => res.json())
     .then(({ sessionId }) => {
-      monitorSession = sessionId;
+      _monitorSession = sessionId;
       const ws = new WebSocket(`ws://localhost:3000/ws/${sessionId}`);
       let logQueue = [];
       ws.onmessage = (event) => {
@@ -381,7 +363,8 @@ addEventListener("load", () => {
           for (const pal of newPals) {
             let currentPal = pals.find((p) => p.name === pal.name);
             if (currentPal) {
-              currentPal.physics = pal.physics;
+              currentPal.status = pal.status;
+              currentPal.activity = pal.activity;
             } else {
               currentPal = pals.push(new Pal(pal.name, pal.avatarURL, pal.status, pal.activity));
             }
@@ -389,6 +372,7 @@ addEventListener("load", () => {
               ws.send(JSON.stringify({ type: "activity", id: pal.activity }));
             }
           }
+          updateGroups();
           logQueue.push(JSON.stringify(newPals, null, 2));
         } else if (data.type == "activities") {
           const newActivities = JSON.parse(data.msg);
@@ -398,6 +382,7 @@ addEventListener("load", () => {
             }
             knownActivities.set(activity.type + ":" + activity.id, activity);
           }
+          updateGroups();
           logQueue.push(JSON.stringify(newActivities, null, 2));
         } else {
           logQueue.push("Unknown message type: " + data.type);

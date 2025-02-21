@@ -1,11 +1,13 @@
 import fs from 'fs';
 import { createServer, IncomingMessage } from 'http';
+import 'dotenv/config';
 
 import express, { NextFunction, Request } from 'express';
 import { EAuthTokenPlatformType, LoginSession } from 'steam-session';
 import QRCode from 'qrcode'
 import { v4 as uuidv4 } from 'uuid';
 import WebSocket, { WebSocketServer } from 'ws';
+import SGDB from 'steamgriddb';
 
 // import { loggedIn as discordLoggedIn } from "./discord";
 // import { initializeSteam, loggedIn as steamLoggedIn } from "./steam";
@@ -140,17 +142,22 @@ function monitorWSHandler(_ms: monitorSession, ws: WebSocket) {
     ws.send(JSON.stringify({ type, msg }));
   }
   wsSend("msg", "Monitoring friends list");
-  // Monitor friends list.
-  // Initial message is full list (lobbyPal[])
-  // Subsequent messages are updates (lobbyPal)
-  // lobby activity sent upon request from client
-  fetchSteamFriends()
+  const update = () => {
+    fetchSteamFriends()
     .then(friends => steamFriendsToPals(friends))
     .then(({ pals, activities }) => {
       activities.forEach(a => activityCache.set(a.id, a));
       wsSend("activities", JSON.stringify(activities));
       wsSend("pals", JSON.stringify(pals));
+    })
+    .catch(err => {
+      console.error(err);
+      wsSend("err", "Error fetching friends list");
     });
+  }
+  update();
+  const intervalID = setInterval(update, 30000);
+  
   ws.on('message', (msg) => {
     const data = JSON.parse(msg.toString());
     if (data.type === "activity") {
@@ -161,6 +168,10 @@ function monitorWSHandler(_ms: monitorSession, ws: WebSocket) {
       }
       wsSend("activities", JSON.stringify(activity));
     }
+  });
+
+  ws.on('close', () => {
+    clearInterval(intervalID);
   });
 }
 function chunks<T>(array: T[], chunkSize: number): T[][] {
@@ -192,7 +203,23 @@ function steamStatusToPalStatus(steamStatus: number): 0 | 1 | 2 {
     case 4: return 1;
   }
   return 0;
-};
+}
+
+const client = new SGDB(process.env.STEAMGRIDDB_API_KEY || "");
+async function fetchSteamGridDBImage(appId: string): Promise<string | null> {
+  try {
+    const gridData = await client.getGrids({ type: 'steam', id: parseInt(appId), dimensions: ['1024x1024', '512x512'] });
+    if (gridData === null || gridData.length === 0) {
+      return null;
+    }
+    const gridImages = gridData.map((img) => img.url);
+    return gridImages[0].toString();
+  } catch (error) {
+    console.error('Error fetching from SteamGridDB:', error);
+    return null;
+  }
+}
+
 
 async function steamFriendsToPals(friends: SteamFriendProfile[]): Promise<{ pals: lobbyPal[], activities: lobbyActivity[] }> {
   const pals = friends.map(f => {
@@ -203,25 +230,29 @@ async function steamFriendsToPals(friends: SteamFriendProfile[]): Promise<{ pals
       activity: f.gameid !== undefined ? `steam:${f.gameid}` : undefined,
     }
   });
-  const gameIDs = new Set(friends.filter(f => f.gameid !== undefined).map(f => 
+  const gameIDs = new Set(friends.filter(f => f.gameid !== undefined).map(f =>
     f.gameid!));
-  // fetch game store pages
+  // Fetch both store data and SteamGridDB images
   const gameData = await Promise.all(Array.from(gameIDs).map(async (gameID) => {
-    const storeData = await fetch("https://store.steampowered.com/api/appdetails?appids=" + gameID).then(res => res.json());
-    return storeData;
-  })); // TODO: could use steamgridDB here for pretty heroes without text
-  const activities = gameData.flat()
-    .map((data: any) => {
-      const appid = Object.keys(data)[0];
-      if (data === null || data[appid].success === false) {
+    const [storeData, gridImage] = await Promise.all([
+      fetch("https://store.steampowered.com/api/appdetails?appids=" + gameID).then(res => res.json()),
+      fetchSteamGridDBImage(gameID)
+    ]);
+    return { storeData, gridImage };
+  }));
+
+  const activities = gameData
+    .map(({ storeData, gridImage }) => {
+      const appid = Object.keys(storeData)[0];
+      if (storeData === null || storeData[appid].success === false) {
         return null;
       }
-      const appData = data[appid].data;
+      const appData = storeData[appid].data;
       return {
         type: "steam" as const,
         id: appid,
         name: appData.name as string,
-        backgroundURL: appData.background_raw as string,
+        backgroundURL: gridImage || appData.header_image as string,
       }
     })
     .filter((a: any) => a !== null) as lobbyActivity[];
