@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Mapping</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="mapping-page">
+    <div class="container">
+        <h1>Create User Mappings</h1>
+
+        <div class="columns">
+            <!-- Discord Column -->
+            <div class="column">
+                <h2>Discord Users</h2>
+                <input type="text" id="discord-search" placeholder="Search Discord users...">
+                <div id="discord-list-container">
+                    <div id="discord-list">Loading Discord users...</div>
+                </div>
+                <div class="selected-user" id="selected-discord">Selected: None</div>
+            </div>
+
+            <!-- Steam Column -->
+            <div class="column">
+                <h2>Steam Friends</h2>
+                <div id="steam-login-status" style="display: none; color: yellow; margin-bottom: 10px;">Steam not logged in.</div>
+                <input type="text" id="steam-search" placeholder="Search Steam friends...">
+                <div id="steam-list-container">
+                    <div id="steam-list">Loading Steam friends...</div>
+                </div>
+                <div class="selected-user" id="selected-steam">Selected: None</div>
+            </div>
+        </div>
+
+        <div class="mapping-controls">
+            <input type="text" id="nickname" placeholder="Enter Nickname">
+            <button id="add-mapping">Add Mapping</button>
+        </div>
+
+        <h2>Current Mappings</h2>
+        <div id="current-mappings">No mappings created yet.</div>
+
+        <h2>Generated Config Snippet</h2>
+        <textarea id="output-json" rows="10" readonly placeholder="'userMapping' JSON will appear here..."></textarea>
+
+    </div>
+
+    <script src="mapping.js"></script>
+</body>
+</html>

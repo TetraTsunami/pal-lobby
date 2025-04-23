@@ -1,0 +1,381 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+/* Discord page specific styles */
+body.discord-page {
+    background-color: #202024;
+    color: #dcddde;
+}
+
+.discord-page .container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #2f3136; /* Slightly lighter background for content */
+    border-radius: 8px;
+}
+
+.discord-page h1, .discord-page h2 {
+    color: #ffffff;
+    border-bottom: 1px solid #40444b;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.discord-page #search-input {
+    width: calc(100% - 22px); /* Account for padding */
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #40444b;
+    border-radius: 4px;
+    background-color: #40444b;
+    color: #dcddde;
+    font-size: 1em;
+}
+
+.discord-page #user-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #40444b;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.discord-page #user-list {
+    padding: 5px;
+}
+
+.discord-page .user-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #40444b;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.discord-page .user-item:last-child {
+    border-bottom: none;
+}
+
+.discord-page .user-item:hover {
+    background-color: #36393f;
+}
+
+.discord-page .user-item.selected {
+    background-color: #404e7c; /* Selection color */
+}
+
+.discord-page .user-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 10px;
+}
+
+.discord-page .user-item span {
+    flex-grow: 1;
+}
+
+.discord-page .user-item input[type="checkbox"] {
+    margin-left: 10px;
+    accent-color: #7289da; /* Discord brand color */
+    width: 18px;
+    height: 18px;
+}
+
+.discord-page #selected-ids {
+    width: calc(100% - 22px); /* Account for padding */
+    padding: 10px;
+    border: 1px solid #40444b;
+    border-radius: 4px;
+    background-color: #40444b;
+    color: #dcddde;
+    font-family: monospace;
+    resize: vertical;
+}
+
+/* Hide user items that don't match search */
+.discord-page .user-item.hidden {
+    display: none;
+}
+
+/* Steam page specific styles */
+body.steam-page {
+    background-color: #1b2838; /* Steam dark blue */
+    color: #c7d5e0; /* Steam light grey/blue */
+}
+
+.steam-page .container {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #2a475e; /* Steam medium blue */
+    border-radius: 8px;
+}
+
+.steam-page h1, .steam-page h2 {
+    color: #ffffff;
+    border-bottom: 1px solid #1b2838;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.steam-page #search-input {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #1b2838;
+    border-radius: 4px;
+    background-color: #1b2838;
+    color: #c7d5e0;
+    font-size: 1em;
+}
+
+.steam-page #friend-list-container {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #1b2838;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.steam-page #friend-list {
+    padding: 5px;
+}
+
+.steam-page .friend-item {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-bottom: 1px solid #1b2838;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.steam-page .friend-item:last-child {
+    border-bottom: none;
+}
+
+.steam-page .friend-item:hover {
+    background-color: #171a21; /* Steam very dark blue */
+}
+
+.steam-page .friend-item.selected {
+    background-color: #4b6a85; /* Selection color */
+}
+
+.steam-page .friend-item img {
+    width: 40px;
+    height: 40px;
+    border-radius: 4px; /* Steam uses square avatars */
+    margin-right: 10px;
+}
+
+.steam-page .friend-item span {
+    flex-grow: 1;
+}
+
+.steam-page .friend-item input[type="checkbox"] {
+    margin-left: 10px;
+    accent-color: #66c0f4; /* Steam light blue */
+    width: 18px;
+    height: 18px;
+}
+
+.steam-page #selected-ids {
+    width: calc(100% - 22px);
+    padding: 10px;
+    border: 1px solid #1b2838;
+    border-radius: 4px;
+    background-color: #1b2838;
+    color: #c7d5e0;
+    font-family: monospace;
+    resize: vertical;
+}
+
+/* Hide friend items that don't match search */
+.steam-page .friend-item.hidden {
+    display: none;
+}
+
+/* Mapping page specific styles */
+body.mapping-page {
+    background-color: #e1e1e1; /* Light grey background */
+    color: #333;
+}
+
+.mapping-page .container {
+    max-width: 1000px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fdfdfd; /* White content area */
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.mapping-page h1, .mapping-page h2 {
+    color: #333;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.mapping-page .columns {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.mapping-page .column {
+    flex: 1;
+    background-color: #f4f4f4; /* Slightly off-white for columns */
+    padding: 15px;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+}
+
+.mapping-page .column h2 {
+    margin-top: 0;
+    font-size: 1.2em;
+    border-bottom: 1px solid #ddd;
+}
+
+.mapping-page input[type="text"] {
+    width: calc(100% - 22px);
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 1em;
+}
+
+.mapping-page #discord-list-container,
+.mapping-page #steam-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    background-color: #fff;
+}
+
+.mapping-page #discord-list,
+.mapping-page #steam-list {
+    padding: 5px;
+}
+
+.mapping-page .list-item { /* Generic class for both lists */
+    display: flex;
+    align-items: center;
+    padding: 6px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.mapping-page .list-item:last-child {
+    border-bottom: none;
+}
+
+.mapping-page .list-item:hover {
+    background-color: #e9e9e9;
+}
+
+.mapping-page .list-item.selected {
+    background-color: #cce5ff; /* Light blue selection */
+    font-weight: bold;
+}
+
+.mapping-page .list-item img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%; /* Default to round, override for steam */
+    margin-right: 8px;
+}
+
+.mapping-page .steam-item img { /* Steam specific avatar style */
+    border-radius: 4px;
+}
+
+.mapping-page .list-item span {
+    flex-grow: 1;
+    font-size: 0.9em;
+}
+
+.mapping-page .selected-user {
+    margin-top: 10px;
+    padding: 8px;
+    background-color: #e9ecef;
+    border-radius: 4px;
+    font-size: 0.9em;
+    min-height: 1.2em; /* Ensure consistent height */
+}
+
+.mapping-page .mapping-controls {
+    margin-bottom: 20px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.mapping-page .mapping-controls input[type="text"] {
+    flex-grow: 1;
+    margin-bottom: 0;
+}
+
+.mapping-page button {
+    padding: 10px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.2s;
+}
+
+.mapping-page button:hover {
+    background-color: #0056b3;
+}
+
+.mapping-page #current-mappings ul {
+    list-style: none;
+    padding: 0;
+}
+
+.mapping-page #current-mappings li {
+    background-color: #f8f9fa;
+    padding: 8px 12px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    border: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.mapping-page #current-mappings button {
+    background-color: #dc3545;
+    font-size: 0.8em;
+    padding: 4px 8px;
+}
+
+.mapping-page #current-mappings button:hover {
+    background-color: #c82333;
+}
+
+.mapping-page #output-json {
+    width: calc(100% - 22px);
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    color: #333;
+    font-family: monospace;
+    resize: vertical;
+    margin-top: 10px;
+}

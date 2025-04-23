@@ -1,8 +1,9 @@
 import fs from 'fs';
 import { createServer, IncomingMessage } from 'http';
+import readyClient from './discord';
 import 'dotenv/config';
 
-import express, { NextFunction, Request } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import { EAuthTokenPlatformType, LoginSession } from 'steam-session';
 import QRCode from 'qrcode'
 import { v4 as uuidv4 } from 'uuid';
@@ -72,6 +73,52 @@ app.get('/api/monitor', (_, res) => {
   const sessionId = uuidv4();
   sessions.set(sessionId, { type: "monitor", socket: null });
   res.json({ sessionId });
+});
+
+app.get('/api/discord/users', async (_, res) => {
+  try {
+    const client = await readyClient;
+    const guilds = await client.guilds.fetch(); // Fetch all guilds the bot is in
+    const users = new Map<string, { id: string, username: string, avatar: string | null }>();
+
+    for (const oauthGuild of guilds.values()) {
+      const guild = await oauthGuild.fetch(); // Fetch full guild object
+      const members = await guild.members.fetch(); // Fetch all members in the guild
+      members.forEach(member => {
+        if (!users.has(member.id) && !member.user.bot) { // Avoid duplicates and bots
+          users.set(member.id, {
+            id: member.id,
+            username: member.user.username,
+            avatar: member.user.displayAvatarURL(),
+          });
+        }
+      });
+    }
+
+    res.json(Array.from(users.values()));
+  } catch (error) {
+    console.error("Error fetching Discord users:", error);
+    res.status(500).json({ error: "Failed to fetch Discord users" });
+  }
+});
+
+app.get('/api/steam/friends', async (_: Request, res: Response) => {
+  if (!steamAccessToken) {
+    return res.status(401).json({ error: "Steam not logged in" });
+  }
+  try {
+    const friends = await fetchSteamFriends();
+    // Simplify the data sent to the client
+    const friendData = friends.map(f => ({
+      id: f.steamid,
+      username: f.personaname,
+      avatar: f.avatarmedium, // Use medium avatar
+    }));
+    res.json(friendData);
+  } catch (error) {
+    console.error("Error fetching Steam friends:", error);
+    res.status(500).json({ error: "Failed to fetch Steam friends" });
+  }
 });
 
 wss.on('connection', function (ws, req: IncomingMessage) {

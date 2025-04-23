@@ -138,8 +138,8 @@ class Group {
   backgroundURL;
   img;
   physics = new PhysicsCircle(
-    Math.random() * (width - 2 * 70) + 70,
-    Math.random() * (height - 2 * 70) + 70,
+    ((groups.length * 150) % (width - 200)) + 200,
+    ((Math.floor(groups.length / 3) * 150) % (height - 200)) + 200,
     0,
     0,
     1,
@@ -225,7 +225,7 @@ function repelPoints(list, magnitude = 1) {
  */
 function updatePositions(circles, groups) {
   repelPoints(circles.map((c) => c.physics));
-  repelPoints(groups.map((g) => g.physics));
+  repelPoints(groups.map((g) => g.physics), 2);
   groups.forEach((g) => {
     g.age += 3;
     circles.forEach(circle => {
